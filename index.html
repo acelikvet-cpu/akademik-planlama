@@ -636,7 +636,7 @@ body.secure-locked .app{filter:blur(2px);pointer-events:none;user-select:none}
       <button onclick="downloadExcelTemplate()">Excel Şablonu İndir</button>
       <button onclick="document.getElementById('excelImportFile').click()">Excel'den Toplu Yükle</button>
       <button onclick="openBulkPasteCenter()">Kopyala-Yapıştır Toplu Giriş</button>
-      <input id="excelImportFile" type="file" accept=".xlsx" style="display:none" onchange="previewExcel(event)">
+      <input id="excelImportFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="previewExcel(event)">
       <button onclick="activateView('surumler'); renderBackupCenterV56()">Yedek Merkezi</button>
       <button onclick="exportData()">JSON yedek al</button>
       <button onclick="document.getElementById('importFile').click()">JSON yedek yükle</button>
@@ -6088,7 +6088,7 @@ function renderV3Dashboard(){
     </div>
     <div class="report-grid">
       <div class="card"><h3 class="panel-title">Öncelikli İyileştirme Listesi</h3><div class="issue-list">${nextIssues}</div></div>
-      <div class="card"><h3 class="panel-title">Hızlı Araçlar</h3><div class="row"><button class="btn ghost" onclick="applyConstraintProfile('student')">Öğrenci Odaklı Profil</button><button class="btn ghost" onclick="applyConstraintProfile('teacher')">Öğretmen Odaklı Profil</button><button class="btn ghost" onclick="normalizeLessonColors(true)">Renkleri Standartlaştır</button><button class="btn ghost" onclick="document.getElementById('excelPreviewFile').click()">Akıllı Excel Önizleme</button><button class="btn ghost" onclick="openBulkPasteCenter()">Kopyala-Yapıştır Giriş</button><input id="excelPreviewFile" type="file" accept=".xlsx" style="display:none" onchange="previewExcel(event)"></div></div>
+      <div class="card"><h3 class="panel-title">Hızlı Araçlar</h3><div class="row"><button class="btn ghost" onclick="applyConstraintProfile('student')">Öğrenci Odaklı Profil</button><button class="btn ghost" onclick="applyConstraintProfile('teacher')">Öğretmen Odaklı Profil</button><button class="btn ghost" onclick="normalizeLessonColors(true)">Renkleri Standartlaştır</button><button class="btn ghost" onclick="document.getElementById('excelPreviewFile').click()">Akıllı Excel Önizleme</button><button class="btn ghost" onclick="openBulkPasteCenter()">Kopyala-Yapıştır Giriş</button><input id="excelPreviewFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="previewExcel(event)"></div></div>
     </div>`;
 }
 function applyConstraintProfile(key){
@@ -6174,17 +6174,50 @@ function globalSearch(q){
 }
 function openSearchResult(view,id){ document.getElementById('searchPopover')?.classList.remove('show'); activateView(view); setTimeout(()=>{ if(view==='program'){ const s=document.getElementById('progClassSelect'); if(s){s.value=id; renderScheduleGrid();} } if(view==='ogretmenprog'){ const s=document.getElementById('teacherProgSelect'); if(s){s.value=id; renderTeacherGrid();} } if(view==='derslikprog'){ const s=document.getElementById('roomProgSelect'); if(s){s.value=id; renderRoomGrid();} } },30); }
 document.addEventListener('click',e=>{ if(!e.target.closest('.search-popover') && !e.target.closest('.global-search')) document.getElementById('searchPopover')?.classList.remove('show'); });
+function excelWorkbookToPreviewV74(wb){
+  const perSheet={};
+  Object.entries(EXCEL_SHEET_TO_MODULE_V74).forEach(([sheetName,module])=>{
+    if(!wb.SheetNames.includes(sheetName)) return;
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{header:1,defval:''});
+    perSheet[sheetName]={module, res:bulkParseRows(module,rows)};
+  });
+  return perSheet;
+}
 function previewExcel(ev){
   if(!ensureXLSX()) return;
   const file=ev.target.files[0]; if(!file) return; const reader=new FileReader();
-  reader.onload=()=>{ try{ pendingExcelBuffer=reader.result; const wb=XLSX.read(reader.result,{type:'array'}); const checks=[]; const has=n=>wb.SheetNames.includes(n);
-    ['Bölümler','Öğretmenler','Sınıflar','Dersler'].forEach(n=>checks.push({level:has(n)?'ok':'bad',msg:n+' sayfası '+(has(n)?'bulundu':'eksik')}));
-    if(has('Dersler')){ const rows=XLSX.utils.sheet_to_json(wb.Sheets['Dersler'],{defval:''}); rows.forEach((r,i)=>{ const miss=[]; if(!r['Sınıf Adı']) miss.push('Sınıf'); if(!r['Ders Adı']) miss.push('Ders'); if(!r['Öğretmen Adı']) miss.push('Öğretmen'); if(!parseInt(r['Haftalık Saat'],10)) miss.push('Saat'); checks.push({level:miss.length?'bad':'ok',msg:`Dersler ${i+2}. satır: ${miss.length?'Eksik '+miss.join(', '):'uygun'}`}); }); }
-    const rowsHtml=checks.slice(0,120).map(c=>`<tr class="excel-${c.level}"><td>${c.level==='ok'?'Uygun':c.level==='bad'?'Hatalı':'Uyarı'}</td><td>${esc(c.msg)}</td></tr>`).join('');
+  reader.onload=()=>{ try{
+    pendingExcelBuffer=reader.result;
+    const wb=XLSX.read(reader.result,{type:'array'});
+    const found=Object.keys(EXCEL_SHEET_TO_MODULE_V74).filter(n=>wb.SheetNames.includes(n));
+    if(!found.length){ toast('Tanınan bir sayfa bulunamadı (Bölümler/Öğretmenler/Sınıflar/Derslikler/Dersler).','warn'); return; }
+    const perSheet=excelWorkbookToPreviewV74(wb);
+    let totalBad=0, totalWarn=0, totalOk=0;
+    const sections=found.map(sheetName=>{
+      const {module,res}=perSheet[sheetName];
+      const ok=res.items.filter(x=>x.status==='ok').length, warn=res.items.filter(x=>x.status==='warn').length, bad=res.items.filter(x=>x.status==='bad').length;
+      totalOk+=ok; totalWarn+=warn; totalBad+=bad;
+      return `<div class="excel-sheet-block-v74"><h3 class="panel-title">${esc(sheetName)} <small style="font-weight:600;color:var(--muted)">(${res.items.length} satır · ${ok} uygun · ${warn} uyarı · ${bad} hatalı)</small></h3>${bulkRowsTableHtml(module,res.items)}</div>`;
+    }).join('');
+    const missing=Object.keys(EXCEL_SHEET_TO_MODULE_V74).filter(n=>!found.includes(n));
     document.getElementById('assignModalTitle').textContent='Akıllı Excel Önizleme';
-    document.getElementById('assignModalBody').innerHTML=`<p style="color:var(--muted);font-size:13px">Dosya içe alınmadan önce temel sayfa ve satır kontrolleri yapıldı.</p><div class="excel-preview-table"><table><thead><tr><th>Durum</th><th>Kontrol</th></tr></thead><tbody>${rowsHtml}</tbody></table></div><div class="row" style="margin-top:12px"><button class="btn accent" onclick="importPendingExcel()">Onayla ve İçe Aktar</button><button class="btn ghost" onclick="closeAssignModal()">Vazgeç</button></div>`;
+    document.getElementById('assignModalBody').innerHTML=`
+      <p style="color:var(--muted);font-size:13px">Dosya içe alınmadan önce her sayfa satır satır doğrulandı. Sütun başlıkları farklı yazılsa bile (ör. "Sinif Adi" / "Sınıf Adı") otomatik tanınır.</p>
+      <div class="bulk-summary-v55" style="margin-bottom:10px">
+        <div class="bulk-stat-v55"><span>Toplam satır</span><b>${totalOk+totalWarn+totalBad}</b></div>
+        <div class="bulk-stat-v55 ok"><span>Uygun</span><b>${totalOk}</b></div>
+        <div class="bulk-stat-v55 warn"><span>Uyarı</span><b>${totalWarn}</b></div>
+        <div class="bulk-stat-v55 bad"><span>Hatalı</span><b>${totalBad}</b></div>
+      </div>
+      ${missing.length?`<div class="issue warning" style="margin-bottom:10px">Bulunmayan sayfalar (atlanacak): ${missing.join(', ')}</div>`:''}
+      ${sections}
+      <div class="row" style="margin-top:12px">
+        <button class="btn accent" onclick="importPendingExcel()">${totalBad?'Hatalıları Atla, Uygunları Aktar':'Onayla ve İçe Aktar'}</button>
+        <button class="btn ghost" onclick="closeAssignModal()">Vazgeç</button>
+      </div>`;
     document.getElementById('assignModalBg').classList.add('show');
-  }catch(e){ toast('Excel önizleme yapılamadı: '+e.message); }}; reader.readAsArrayBuffer(file); ev.target.value='';
+  }catch(e){ console.warn(e); toast('Excel dosyası okunamadı. Dosyanın .xlsx/.xls/.csv olduğundan ve bozuk olmadığından emin olun.'); } };
+  reader.readAsArrayBuffer(file); ev.target.value='';
 }
 function importPendingExcel(){ if(!pendingExcelBuffer){ toast('Önizlenen dosya bulunamadı.'); return; } const fake={target:{files:[new File([pendingExcelBuffer],'onizleme.xlsx')], value:''}}; closeAssignModal(); importExcel(fake); pendingExcelBuffer=null; }
 
@@ -8264,91 +8297,24 @@ function importExcel(ev){
   reader.onload = ()=>{
     try{
       const wb = XLSX.read(reader.result, {type:'array'});
-      let addedTeachers=0, addedClasses=0, addedRooms=0, addedDepts=0, addedLessons=0, updatedLessons=0;
-
-      if(wb.SheetNames.includes('Bölümler')){
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Bölümler'], {defval:''});
-        rows.forEach(r=>{
-          const name = r['Bölüm Adı']; if(!name) return;
-          const existedBefore = state.departments.some(d=>d.name.toLowerCase()===String(name).trim().toLowerCase());
-          findOrCreateDeptByName(name);
-          if(!existedBefore) addedDepts++;
-        });
-      }
-
-      if(wb.SheetNames.includes('Öğretmenler')){
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Öğretmenler'], {defval:''});
-        rows.forEach(r=>{
-          const name = r['Öğretmen Adı']; if(!name) return;
-          const existedBefore = state.teachers.some(t=>t.name.toLowerCase()===String(name).trim().toLowerCase());
-          const t = findOrCreateTeacherByName(name);
-          if(!existedBefore) addedTeachers++;
-          const title = String(r['Unvan (opsiyonel)']||r['Unvan']||'').trim();
-          if(title) t.title = title;
-          const freeDayStr = String(r['Boş Gün İstiyor (Evet/Hayır)']||'').trim().toLowerCase();
-          if(freeDayStr) t.wantsFreeDay = (freeDayStr==='evet'||freeDayStr==='yes'||freeDayStr==='true');
-          const noB2BStr = String(r['Farklı Dersleri Art Arda Olmasın (Evet/Hayır)']||'').trim().toLowerCase();
-          if(noB2BStr) t.noBackToBack = (noB2BStr==='evet'||noB2BStr==='yes'||noB2BStr==='true');
-          const unavailStr = r['Müsait Olmadığı Saatler (opsiyonel)'] || r['Müsait Olmadığı Saatler'] || '';
-          if(unavailStr){
-            const parsed = parseUnavailString(unavailStr);
-            parsed.forEach(k=>{ if(!t.unavail.includes(k)) t.unavail.push(k); });
-          }
-        });
-      }
-
-      if(wb.SheetNames.includes('Sınıflar')){
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Sınıflar'], {defval:''});
-        rows.forEach(r=>{
-          const name = r['Sınıf Adı']; if(!name) return;
-          const deptName = String(r['Bölüm Adı (opsiyonel)']||r['Bölüm Adı']||r['Bölüm']||'').trim();
-          const dept = deptName ? findOrCreateDeptByName(deptName) : null;
-          const existedBefore = state.classes.some(c=>c.name.toLowerCase()===String(name).trim().toLowerCase());
-          findOrCreateClassByName(name, dept?dept.id:null);
-          if(!existedBefore) addedClasses++;
-        });
-      }
-
-      if(wb.SheetNames.includes('Derslikler')){
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Derslikler'], {defval:''});
-        rows.forEach(r=>{
-          const name = r['Derslik Adı']; if(!name) return;
-          const existedBefore = state.rooms.some(x=>x.name.toLowerCase()===String(name).trim().toLowerCase());
-          findOrCreateRoomByName(name);
-          if(!existedBefore) addedRooms++;
-        });
-      }
-
-      if(wb.SheetNames.includes('Dersler')){
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Dersler'], {defval:''});
-        const palette=['#3a6ea5','#a5473a','#3a8a5c','#8a5ca5','#c07a2b','#2b8ac0','#a52b6f','#5c7a3a'];
-        let colorIdx=0;
-        rows.forEach(r=>{
-          const className = r['Sınıf Adı'], subject = r['Ders Adı'], teacherName = r['Öğretmen Adı'];
-          const hours = parseInt(r['Haftalık Saat'],10);
-          const blockStr = String(r['Blok (Tekli/İkili/Üçlü)']||r['Blok']||'').trim().toLowerCase();
-          const blockSize = BLOCK_NAME_MAP[blockStr]||1;
-          const roomName = String(r['Derslik (opsiyonel)']||r['Derslik']||'').trim();
-          const coTeacherName = String(r['Ortak Öğretmen (opsiyonel)']||r['Ortak Öğretmen']||'').trim();
-          const spreadStr = String(r['Aynı Gün Tekrar Olmasın (Evet/Hayır)']||'').trim().toLowerCase();
-          const spreadDays = (spreadStr==='evet'||spreadStr==='yes'||spreadStr==='true');
-          let color = String(r['Renk (opsiyonel, #hex)']||r['Renk']||'').trim();
-          if(!className||!subject||!teacherName||!hours){ return; }
-          const cls = findOrCreateClassByName(className);
-          const teacher = findOrCreateTeacherByName(teacherName);
-          const room = roomName ? findOrCreateRoomByName(roomName) : null;
-          const coTeacher = coTeacherName ? findOrCreateTeacherByName(coTeacherName) : null;
-          if(!/^#[0-9a-fA-F]{6}$/.test(color)){ color = palette[colorIdx%palette.length]; colorIdx++; }
-          let lesson = state.lessons.find(l=>l.classId===cls.id && l.teacherId===teacher.id && l.subject.toLowerCase()===String(subject).trim().toLowerCase());
-          if(lesson){ lesson.hours=hours; lesson.color=color; lesson.blockSize=blockSize; lesson.roomId=room?room.id:null; lesson.coTeacherId=coTeacher?coTeacher.id:null; lesson.spreadDays=spreadDays; updatedLessons++; }
-          else{ state.lessons.push({id:uid(), classId:cls.id, teacherId:teacher.id, subject:String(subject).trim(), hours, blockSize, roomId:room?room.id:null, coTeacherId:coTeacher?coTeacher.id:null, spreadDays, color, slots:[]}); addedLessons++; }
-        });
-      }
-
-      save(); renderAll();
-      toast(`Yüklendi: +${addedDepts} bölüm, +${addedTeachers} öğretmen, +${addedClasses} sınıf, +${addedRooms} derslik, +${addedLessons} yeni ders, ${updatedLessons} ders güncellendi.`);
+      const found = Object.keys(EXCEL_SHEET_TO_MODULE_V74).filter(n=>wb.SheetNames.includes(n));
+      if(!found.length){ toast('Tanınan bir sayfa bulunamadı (Bölümler/Öğretmenler/Sınıflar/Derslikler/Dersler).','warn'); return; }
+      const perSheet = excelWorkbookToPreviewV74(wb);
+      const order = ['Bölümler','Sınıflar','Öğretmenler','Derslikler','Dersler']; // önce bağımlı olunanlar
+      const summary=[]; let totalBad=0;
+      pushUndo('Excel içe aktarma');
+      order.filter(n=>found.includes(n)).forEach(sheetName=>{
+        const {module,res}=perSheet[sheetName];
+        const usable=res.items.filter(x=>x.status!=='bad');
+        const bad=res.items.length-usable.length;
+        totalBad+=bad;
+        const stats=bulkImportItems(module,usable);
+        summary.push(`${sheetName}: +${stats.added} yeni, ${stats.updated} güncelleme${bad?`, ${bad} hatalı satır atlandı`:''}`);
+      });
+      ensureProfessionalDefaults(); save(); renderAll();
+      toast('Excel içe aktarıldı — '+summary.join(' · ')+(totalBad?' (Geri almak için son işlemi geri al düğmesini kullanabilirsiniz.)':''));
     }catch(e){
-      console.warn(e); toast('Excel dosyası okunamadı: '+e.message);
+      console.warn(e); toast('Excel dosyası okunamadı. Dosyanın .xlsx/.xls/.csv olduğundan ve bozuk olmadığından emin olun.');
     }
   };
   reader.readAsArrayBuffer(file);
@@ -9178,14 +9144,28 @@ function bulkMapRow(row,map,module,lineNo){
   }
   bulkValidateItem(o); return o;
 }
+function bulkNearDuplicateWarning(list,name){
+  if(!name) return null;
+  const exact=list.find(x=>String(x.name||'').toLowerCase()===String(name).toLowerCase());
+  if(exact) return null; // tam eşleşme var; bu satır güncelleme olacak, sorun yok
+  const norm=bulkNormalize(name);
+  const near=list.find(x=>bulkNormalize(x.name)===norm);
+  return near?near.name:null;
+}
 function bulkValidateItem(o){
   const req={bolumler:['dept'],siniflar:['className'],ogretmenler:['teacher'],derslikler:['room'],dersler:['className','subject','teacher','hours']}[o.module]||[];
   req.forEach(k=>{ if(!String(o[k]||'').trim()) o.messages.push('Zorunlu alan eksik: '+k); });
+  if(o.module==='bolumler'){ const near=bulkNearDuplicateWarning(state.departments,o.dept); if(near) o.messages.push(`Benzer isimli bölüm zaten var: "${near}" — yazım farkı olabilir, yeni kayıt oluşturulacak.`); }
+  if(o.module==='siniflar'){ const near=bulkNearDuplicateWarning(state.classes,o.className); if(near) o.messages.push(`Benzer isimli sınıf zaten var: "${near}" — yazım farkı olabilir, yeni kayıt oluşturulacak.`); }
+  if(o.module==='ogretmenler'){ const near=bulkNearDuplicateWarning(state.teachers,o.teacher); if(near) o.messages.push(`Benzer isimli öğretmen zaten var: "${near}" — yazım farkı olabilir, yeni kayıt oluşturulacak.`); }
+  if(o.module==='derslikler'){ const near=bulkNearDuplicateWarning(state.rooms,o.room); if(near) o.messages.push(`Benzer isimli derslik zaten var: "${near}" — yazım farkı olabilir, yeni kayıt oluşturulacak.`); }
   if(o.module==='dersler'){
     const h=parseInt(o.hours,10); if(!h || h<1 || h>20) o.messages.push('Haftalık saat 1-20 arasında olmalı.');
     const bs=bulkBlockSize(o.block); if(o.block && !bs) o.messages.push('Blok değeri Tekli/İkili/Üçlü veya 1/2/3 olmalı.');
     const t=bulkLessonType(o.type); if(o.type && !t) o.messages.push('Tür tanınmadı; teorik/laboratuvar/uygulama/seçmeli/zorunlu kullanın.');
     if(o.color && !/^#[0-9a-fA-F]{6}$/.test(o.color)) o.messages.push('Renk #RRGGBB formatında değil; otomatik atanır.');
+    const nearT=bulkNearDuplicateWarning(state.teachers,o.teacher); if(nearT) o.messages.push(`Benzer isimli öğretmen zaten var: "${nearT}" — yazım farkı kontrol edin.`);
+    const nearC=bulkNearDuplicateWarning(state.classes,o.className); if(nearC) o.messages.push(`Benzer isimli sınıf zaten var: "${nearC}" — yazım farkı kontrol edin.`);
   }
   if(o.module==='derslikler' && o.capacity){ const c=parseInt(o.capacity,10); if(!c || c<1) o.messages.push('Kapasite sayı olmalı.'); }
   o.status=o.messages.some(m=>m.includes('Zorunlu')||m.includes('olmalı'))?'bad':(o.messages.length?'warn':'ok');
@@ -9199,6 +9179,20 @@ function bulkParse(module,text){
   if(hm.score>0){ header=true; map=hm.map; rows=rows.slice(1); } else map=bulkPositionalMap(module);
   const items=rows.map((r,i)=>bulkMapRow(r,map,module,(header?2:1)+i));
   return {items, header, delim:parsed.delim, map, errors:[]};
+}
+/* Excel sayfaları için aynı motor: XLSX satırları (dizi-içinde-dizi) doğrudan aynı
+   başlık-eşanlam eşleştirme ve doğrulama mantığından geçer — yapıştırma ve Excel
+   içe aktarma artık tek bir ortak kod yolunu paylaşır. */
+const EXCEL_SHEET_TO_MODULE_V74={'Bölümler':'bolumler','Öğretmenler':'ogretmenler','Sınıflar':'siniflar','Derslikler':'derslikler','Dersler':'dersler'};
+function bulkParseRows(module,rows){
+  if(!rows || !rows.length) return {items:[], header:false, map:{}, errors:['Sayfa boş.']};
+  const asStr=r=>r.map(c=>c==null?'':String(c).trim());
+  let dataRows=rows.map(asStr), header=false, map={};
+  const hm=bulkFindHeaderMap(dataRows[0],module);
+  if(hm.score>0){ header=true; map=hm.map; dataRows=dataRows.slice(1); } else map=bulkPositionalMap(module);
+  dataRows=dataRows.filter(r=>r.some(c=>c));
+  const items=dataRows.map((r,i)=>bulkMapRow(r,map,module,(header?2:1)+i));
+  return {items, header, map, errors:[]};
 }
 function bulkExample(module){
   if(module==='bolumler') return 'Bölüm Adı\nVeterinerlik\nBiyokimya\nBeslenme ve Diyetetik';
@@ -9290,11 +9284,9 @@ function bulkConfirmHtmlV55(res,module){
   const sample=usable.slice(0,12).map(x=>{ const name=module==='dersler'?`${x.className||''} · ${x.subject||''}`:module==='ogretmenler'?x.teacher:module==='siniflar'?x.className:module==='derslikler'?x.room:x.dept; return `<div class="bulk-confirm-row-v55"><span>${esc(name||'—')}</span><b>${bulkWillUpdateV55(module,x)?'Güncelleme':'Yeni'}</b></div>`; }).join('');
   return `<div class="bulk-confirm-grid-v55"><div class="bulk-confirm-card-v55"><b>${adds}</b><span>Yeni kayıt</span></div><div class="bulk-confirm-card-v55"><b>${updates}</b><span>Güncellenecek kayıt</span></div><div class="bulk-confirm-card-v55"><b>${bad}</b><span>Atlanacak hatalı satır</span></div></div><div class="bulk-confirm-list-v55">${sample||'<div class="bulk-empty-v55">Önizleme yapıldığında aktarım listesi burada görünür.</div>'}</div>`;
 }
-function bulkPreviewPaste(){
-  const m=document.getElementById('bulkPasteModule')?.value||'dersler'; const text=document.getElementById('bulkPasteText')?.value||''; const res=bulkParse(m,text); bulkLastPreviewV55=res;
-  const sum=document.getElementById('bulkPasteSummary'); if(sum) sum.innerHTML=bulkSummaryHtmlV55(res); const conf=document.getElementById('bulkConfirmBox'); if(conf) conf.innerHTML=bulkConfirmHtmlV55(res,m);
+function bulkRowsTableHtml(m,items){
   const head = m==='dersler' ? ['Durum','Satır','Sınıf','Ders','Öğretmen','Saat','Blok','Tür','Mesaj'] : m==='ogretmenler' ? ['Durum','Satır','Öğretmen','Unvan','Kapalı Saat','Mesaj'] : m==='siniflar' ? ['Durum','Satır','Sınıf','Bölüm','Mesaj'] : m==='derslikler' ? ['Durum','Satır','Derslik','Kapasite','Mesaj'] : ['Durum','Satır','Bölüm','Mesaj'];
-  const rows=res.items.map(it=>{
+  const rows=items.map(it=>{
     const status=`<span class="bulk-status ${it.status}">${it.status==='ok'?'Uygun':it.status==='warn'?'Uyarı':'Hata'}</span>`; const msg=it.messages.join('; ')||'Aktarılabilir';
     let cells=[]; if(m==='dersler') cells=[status,it.lineNo,it.className,it.subject,it.teacher,it.hours,it.block||'Tekli',it.type||'',msg];
     else if(m==='ogretmenler') cells=[status,it.lineNo,it.teacher,it.title||'',it.unavail||'',msg];
@@ -9303,7 +9295,12 @@ function bulkPreviewPaste(){
     else cells=[status,it.lineNo,it.dept,msg];
     return `<tr>${cells.map((c,i)=>`<td>${i===0?c:esc(c)}</td>`).join('')}</tr>`;
   }).join('');
-  const target=document.getElementById('bulkPastePreview'); if(target) target.innerHTML=rows?`<table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`:'<div class="bulk-empty-v55">Önizlenecek satır yok. Yapıştırma alanını kontrol edin.</div>';
+  return rows?`<table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`:'<div class="bulk-empty-v55">Önizlenecek satır yok.</div>';
+}
+function bulkPreviewPaste(){
+  const m=document.getElementById('bulkPasteModule')?.value||'dersler'; const text=document.getElementById('bulkPasteText')?.value||''; const res=bulkParse(m,text); bulkLastPreviewV55=res;
+  const sum=document.getElementById('bulkPasteSummary'); if(sum) sum.innerHTML=bulkSummaryHtmlV55(res); const conf=document.getElementById('bulkConfirmBox'); if(conf) conf.innerHTML=bulkConfirmHtmlV55(res,m);
+  const target=document.getElementById('bulkPastePreview'); if(target) target.innerHTML=bulkRowsTableHtml(m,res.items);
   return res;
 }
 function bulkApplyPaste(){
