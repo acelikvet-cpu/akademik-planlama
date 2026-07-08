@@ -6223,7 +6223,10 @@ function professionalLabel(){
 
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){ console.warn(e); } try{ cloudScheduleAutoBackupV70(); }catch(e){ console.warn(e); } }
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); localStorage.setItem(STATE_UPDATED_AT_KEY_V73, new Date().toISOString()); }catch(e){ console.warn(e); }
+  try{ cloudScheduleAutoBackupV70(); }catch(e){ console.warn(e); }
+}
 function load(){
   try{
     const raw = localStorage.getItem(STORE_KEY);
@@ -6272,13 +6275,6 @@ function afterViewActivated(view){
   if(view==='derslikler') renderRooms();
   if(view==='sinavlar') selectExamPeriod(currentExamPeriod);
   if(view==='ayarlar') syncSettingsForm();
-}
-function activateView(view){
-  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-  const nav=document.querySelector(`.nav-item[data-view="${view}"]`); if(nav) nav.classList.add('active');
-  const target=document.getElementById('view-'+view); if(target) target.classList.add('active');
-  afterViewActivated(view);
 }
 document.querySelectorAll('.nav-item').forEach(el=>{ el.addEventListener('click', ()=>activateView(el.dataset.view)); });
 
@@ -6589,7 +6585,6 @@ function periodCellLabel(hour){ return `<span class="period-no">${hour}. Ders</s
 function shouldInsertLunchAfter(hour, hrs){ return hour===4 && (hrs||state.settings.hoursPerDay||8) >= 5; }
 function renderLunchRowHtml(){ return `<div class="sched-cell lunch-row lunch-label">Öğle Arası<span>12:00–13:15</span></div>` + DAYS.map(()=>`<div class="sched-cell lunch-row lunch-fill">Öğle Arası <span>12:00–13:15</span></div>`).join(''); }
 function renderAvailabilityLunchRowHtml(){ return `<div class="avail-cell head lunch-label">Öğle Arası<br><span>12:00–13:15</span></div>` + DAYS.map(()=>`<div class="avail-cell lunch-row lunch-fill">Ara</div>`).join(''); }
-function slotLabel(day,hour){ return DAYS[day]+' · '+periodTimeText(hour)+' ('+hour+'. ders)'; }
 function renderPeriodPreview(){ const wrap=document.getElementById('periodPreviewWrap'); if(!wrap) return; const hrs=state.settings.hoursPerDay||8; let chips=[]; for(let h=1; h<=hrs; h++){ chips.push(`<div class="period-chip">${h}. Ders<br><small>${periodTimeText(h)}</small></div>`); if(shouldInsertLunchAfter(h,hrs)) chips.push(`<div class="period-chip break">Öğle Arası<br><small>12:00–13:15</small></div>`); } wrap.innerHTML=chips.join(''); }
 
 
@@ -7729,26 +7724,6 @@ function typeLabel(type){ return ({zorunlu:'Zorunlu',secmeli:'Seçmeli',laboratu
 function lessonTypeOptions(selected){
   return ['zorunlu','secmeli','laboratuvar','uygulama','teorik'].map(k=>`<option value="${k}" ${k===(selected||'zorunlu')?'selected':''}>${esc(typeLabel(k))}</option>`).join('');
 }
-function navigateDataTarget(view){ activateView(view); }
-function renderDataEntryDashboard(){
-  const wrap=document.getElementById('dataEntryWrap'); if(!wrap) return;
-  const d=computeScheduleDiagnostics(), s=d.stats;
-  const quality=[
-    ['Bölüm',state.departments.length],['Sınıf',state.classes.length],['Öğretmen',state.teachers.length],['Derslik',state.rooms.length],['Ders',state.lessons.length],['Yerleşme',s.completion+'%']
-  ];
-  wrap.innerHTML=`
-    <div class="data-quality">${quality.map(q=>`<div class="quality-pill"><b>${q[1]}</b><span>${q[0]}</span></div>`).join('')}</div>
-    <div class="shortcut-grid">
-      <div class="shortcut-card" onclick="navigateDataTarget('bolumler')"><div class="big-ico">B</div><b>1. Bölümler</b><p>Bölüm veya programları tanımlayın. Sınıflar daha sonra bu bölümlere bağlanır.</p></div>
-      <div class="shortcut-card" onclick="navigateDataTarget('siniflar')"><div class="big-ico">S</div><b>2. Sınıflar</b><p>Programı çıkarılacak sınıf/şube/yarıyıl gruplarını ekleyin.</p></div>
-      <div class="shortcut-card" onclick="navigateDataTarget('ogretmenler')"><div class="big-ico">Ö</div><b>3. Öğretmenler</b><p>Öğretmenleri, müsait olmayan saatleri ve kişisel tercihleri girin.</p></div>
-      <div class="shortcut-card" onclick="navigateDataTarget('derslikler')"><div class="big-ico">D</div><b>4. Derslikler</b><p>Laboratuvar, amfi ve paylaşımlı özel derslikleri kapasiteyle birlikte tanımlayın.</p></div>
-      <div class="shortcut-card" onclick="navigateDataTarget('dersler')"><div class="big-ico">Y</div><b>5. Ders Yükleri</b><p>Her sınıf için ders, saat, blok, öğretmen, tür, öncelik ve derslik eşleşmesini girin.</p></div>
-      <div class="shortcut-card" onclick="navigateDataTarget('kisitlar')"><div class="big-ico">K</div><b>6. Kısıtlar</b><p>Kesin kuralları kontrol edin; tercih ağırlıklarını okulun önceliğine göre ayarlayın.</p></div>
-      <div class="shortcut-card" onclick="runPreCheck()"><div class="big-ico"></div><b>7. Ön Kontrol</b><p>Eksik veri, kapasite aşımı, çakışma ve yerleşme risklerini programdan önce görün.</p></div>
-      <div class="shortcut-card" onclick="activateView('program')"><div class="big-ico">P</div><b>8. Program Oluştur</b><p>Otomatik program üretin, kilitleyin, sağ tık menüsüyle hızlı düzenleyin.</p></div>
-    </div>`;
-}
 function renderConstraintPanel(){
   const wrap=document.getElementById('constraintsWrap'); if(!wrap) return;
   const w=getConstraintWeights();
@@ -7920,17 +7895,6 @@ function saveProfessionalSettings(){
   state.settings.approval=document.getElementById('settingApproval')?.value.trim()||'';
   save(); toast('Kurum ve çıktı bilgileri kaydedildi.');
 }
-function explainUnplacedLesson(l){
-  const reasons=[]; const hrs=state.settings.hoursPerDay||8; const teacher=state.teachers.find(t=>t.id===l.teacherId); const cls=state.classes.find(c=>c.id===l.classId); const room=state.rooms.find(r=>r.id===l.roomId);
-  if(!cls) reasons.push('Sınıf tanımı eksik.'); if(!teacher) reasons.push('Öğretmen tanımı eksik.');
-  const classNeed=state.lessons.filter(x=>x.classId===l.classId).reduce((a,x)=>a+(x.hours||0),0); if(classNeed>hrs*DAYS.length) reasons.push('Sınıfın haftalık ders yükü toplam kapasiteyi aşıyor.');
-  if(teacher){ const need=state.lessons.filter(x=>x.teacherId===teacher.id||x.coTeacherId===teacher.id).reduce((a,x)=>a+(x.hours||0),0); const avail=hrs*DAYS.length-(teacher.unavail||[]).length; if(need>avail) reasons.push('Öğretmenin müsait kapasitesi toplam ders yükünden düşük.'); if((teacher.unavail||[]).length>hrs*2) reasons.push('Öğretmenin kapalı saatleri fazla; uygun aday saat azalıyor.'); }
-  if(room){ const need=state.lessons.filter(x=>x.roomId===room.id).reduce((a,x)=>a+(x.hours||0),0); if(need>hrs*DAYS.length) reasons.push('Seçilen derslik haftalık kapasiteyi aşıyor.'); }
-  if((l.blockSize||1)>1) reasons.push('Blok ders istediği için art arda boş saat bulmak zorlaşıyor.');
-  if(l.spreadDays) reasons.push('Aynı gün tekrar etmeme tercihi aday saatleri daraltıyor.');
-  if(!reasons.length) reasons.push('Kalan boş saatler öğretmen/sınıf/derslik çakışmalarıyla uyumsuz olabilir.');
-  return reasons.slice(0,4);
-}
 function openScheduleContextMenu(ev,lessonId,day,hour){
   ev.preventDefault(); ev.stopPropagation();
   const l=state.lessons.find(x=>x.id===lessonId); if(!l) return false;
@@ -7940,7 +7904,6 @@ function openScheduleContextMenu(ev,lessonId,day,hour){
 }
 function hideScheduleContextMenu(){ const m=document.getElementById('scheduleContextMenu'); if(m) m.style.display='none'; }
 document.addEventListener('click', hideScheduleContextMenu);
-function showLessonProblems(lessonId){ const l=state.lessons.find(x=>x.id===lessonId); if(!l) return; document.getElementById('assignModalTitle').textContent=l.subject+' — Yerleşim Analizi'; document.getElementById('assignModalBody').innerHTML=`<div class="issue info"><b>Yerleşim:</b> ${l.slots.length}/${l.hours} saat · <b>Tür:</b> ${esc(typeLabel(l.type))} · <b>Öncelik:</b> ${l.priority||3}</div><div class="issue-list">${explainUnplacedLesson(l).map(x=>`<div class="issue warning">${esc(x)}</div>`).join('')}</div>${renderRelaxationSuggestions(l)}`; document.getElementById('assignModalBg').classList.add('show'); }
 function goTeacherFromLesson(lessonId){ const l=state.lessons.find(x=>x.id===lessonId); if(!l) return; activateView('ogretmenprog'); const sel=document.getElementById('teacherProgSelect'); if(sel){ sel.value=l.teacherId; renderTeacherGrid(); } }
 function goRoomFromLesson(lessonId){ const l=state.lessons.find(x=>x.id===lessonId); if(!l||!l.roomId) return; activateView('derslikprog'); const sel=document.getElementById('roomProgSelect'); if(sel){ sel.value=l.roomId; renderRoomGrid(); } }
 
@@ -8567,9 +8530,21 @@ const SECURE_AUTH_KEY_V70='akademik_secure_auth_v70';
 const SECURE_SESSION_KEY_V70='akademik_secure_unlocked_v70';
 const CLOUD_CFG_KEY_V70='akademik_cloud_cfg_v70';
 const CLOUD_LAST_KEY_V70='akademik_cloud_last_v70';
+const STATE_UPDATED_AT_KEY_V73='akademik_state_updated_at_v73';
+
+/* ============ SABİT SUPABASE PROJE BİLGİLERİ ============
+   Bu uygulama tek bir Supabase projesine bağlıdır. URL ve anon/public key,
+   kullanıcıya SORULMAZ — burada bir kez tanımlanır ve her cihazda otomatik kullanılır.
+   ÖNEMLİ: Sadece "anon/public" key kullanın; "service_role/secret" key ASLA buraya konmaz.
+   Kendi Supabase projenizin bilgilerini Proje Ayarları > API bölümünden alıp
+   aşağıdaki iki değeri KENDİ değerlerinizle değiştirin: */
+const SUPABASE_URL_DEFAULT_V73='https://zpvzqblgztkqfqyzqejw.supabase.co';
+const SUPABASE_ANON_KEY_DEFAULT_V73='sb_publishable_0tLmrXJnljCQWDEylXShnw_B0FgcFhH';
+
 let cloudClientV70=null;
 let cloudUserV70=null;
 let cloudAutoDebounceV70=null;
+let cloudAutoIntervalV73=null;
 
 function secureFallbackHashV70(str){
   let h=2166136261;
@@ -8587,48 +8562,6 @@ async function secureHashV70(str){
   return secureFallbackHashV70(str);
 }
 function secureAuthRecordV70(){ try{return JSON.parse(localStorage.getItem(SECURE_AUTH_KEY_V70)||'null');}catch(e){return null;} }
-function secureSetMsgV70(msg,type){
-  const el=document.getElementById('secureLoginMsg'); if(!el) return;
-  el.textContent=msg||''; el.className='secure-login-msg '+(type||''); el.style.display=msg?'block':'none';
-}
-function securePanelV70(id){
-  ['secureSetupBox','secureLoginBox','secureForgotBox'].forEach(x=>document.getElementById(x)?.classList.remove('show'));
-  document.getElementById(id)?.classList.add('show');
-}
-function secureShowOverlayV70(mode){
-  const ov=document.getElementById('secureLoginOverlay'); if(!ov) return;
-  document.body.classList.add('secure-locked');
-  ov.style.display='flex';
-  const sub=document.getElementById('secureLoginSubtitle');
-  if(mode==='setup'){
-    securePanelV70('secureSetupBox');
-    if(sub) sub.textContent='İlk kullanım için uygulama şifresi ve kurtarma kodu oluşturun.';
-    setTimeout(()=>document.getElementById('secureNewPass1')?.focus(),80);
-  }else if(mode==='recovery'){
-    securePanelV70('secureRecoveryBox');
-    if(sub) sub.textContent='Yeni şifrenizi belirleyin.';
-    setTimeout(()=>document.getElementById('secureRecoveryPass1')?.focus(),80);
-  }else if(mode==='forgot'){
-    securePanelV70('secureForgotBox');
-    if(sub) sub.textContent='Kurtarma kodu ile yeni uygulama şifresi belirleyin.';
-    setTimeout(()=>document.getElementById('secureForgotCode')?.focus(),80);
-  }else{
-    securePanelV70('secureLoginBox');
-    if(sub) sub.textContent='Şifreli giriş etkin. Devam etmek için uygulama şifresini girin.';
-    setTimeout(()=>document.getElementById('secureLoginPass')?.focus(),80);
-  }
-}
-function secureShowForgotV70(){ secureSetMsgV70('',''); secureShowOverlayV70('forgot'); }
-function secureHideOverlayV70(){
-  const ov=document.getElementById('secureLoginOverlay'); if(ov) ov.style.display='none';
-  document.body.classList.remove('secure-locked');
-}
-function secureGateInitV70(){
-  const rec=secureAuthRecordV70();
-  if(!rec || !rec.hash || !rec.salt){ secureShowOverlayV70('setup'); return; }
-  if(sessionStorage.getItem(SECURE_SESSION_KEY_V70)==='1'){ secureHideOverlayV70(); return; }
-  secureShowOverlayV70('login');
-}
 async function secureCreatePasswordV70(){
   const p1=document.getElementById('secureNewPass1')?.value||'';
   const p2=document.getElementById('secureNewPass2')?.value||'';
@@ -8671,13 +8604,6 @@ async function secureResendConfirmationV70(){
   secureSetMsgV70('Onay maili tekrar gönderildi. Mail kutunuzu ve spam klasörünü kontrol edin.','ok');
 }
 
-async function secureLoginV70(){
-  const rec=secureAuthRecordV70(); if(!rec){ secureShowOverlayV70('setup'); return; }
-  const p=document.getElementById('secureLoginPass')?.value||'';
-  const hash=await secureHashV70(rec.salt+'|'+p);
-  if(hash===rec.hash){ sessionStorage.setItem(SECURE_SESSION_KEY_V70,'1'); secureSetMsgV70('Giriş başarılı.','ok'); setTimeout(secureHideOverlayV70,180); }
-  else{ secureSetMsgV70('Şifre hatalı. Şifrenizi unuttuysanız “Şifremi Unuttum” seçeneğini kullanın.','bad'); }
-}
 async function secureResetLocalPasswordV70(){
   const rec=secureAuthRecordV70(); if(!rec || !rec.recoveryHash){ secureSetMsgV70('Bu kurulumda kurtarma kodu bulunamadı.','bad'); return; }
   const code=(document.getElementById('secureForgotCode')?.value||'').trim();
@@ -8695,7 +8621,6 @@ async function secureResetLocalPasswordV70(){
   secureSetMsgV70('Şifre sıfırlandı.','ok');
   setTimeout(secureHideOverlayV70,250);
 }
-function secureLogoutV70(){ sessionStorage.removeItem(SECURE_SESSION_KEY_V70); secureShowOverlayV70('login'); }
 function secureChangePasswordV70(){
   const code=prompt('Kurtarma kodunuzu girin:'); if(code===null) return;
   const next=prompt('Yeni uygulama şifresi (en az 6 karakter):'); if(!next) return;
@@ -8719,7 +8644,23 @@ function secureDisablePasswordV70(){
   renderBackupCenterV56();
 }
 
-function cloudConfigV70(){ try{return JSON.parse(localStorage.getItem(CLOUD_CFG_KEY_V70)||'{}')||{};}catch(e){return{};} }
+function cloudHardcodedReadyV73(){
+  return !!(SUPABASE_URL_DEFAULT_V73 && SUPABASE_ANON_KEY_DEFAULT_V73
+    && !/YOUR-PROJECT-REF|YOUR-ANON-PUBLIC-KEY/.test(SUPABASE_URL_DEFAULT_V73+SUPABASE_ANON_KEY_DEFAULT_V73));
+}
+function cloudConfigV70(){
+  let cfg; try{ cfg=JSON.parse(localStorage.getItem(CLOUD_CFG_KEY_V70)||'{}')||{}; }catch(e){ cfg={}; }
+  // Sabit proje bilgileri her zaman geçerlidir; kullanıcıdan URL/anon key istenmez.
+  if(cloudHardcodedReadyV73()){
+    if(!cfg.url) cfg.url=SUPABASE_URL_DEFAULT_V73;
+    if(!cfg.key) cfg.key=SUPABASE_ANON_KEY_DEFAULT_V73;
+    if(typeof cfg.auto==='undefined') cfg.auto=true;          // arkada sürekli, sormadan yedekle
+    if(typeof cfg.interval==='undefined') cfg.interval=3;      // dakika
+    if(typeof cfg.loadOnLogin==='undefined') cfg.loadOnLogin=true;   // sessizce senkronize et (sormaz)
+    if(typeof cfg.backupOnLogout==='undefined') cfg.backupOnLogout=true;
+  }
+  return cfg;
+}
 function cloudSaveConfigV70(cfg){ localStorage.setItem(CLOUD_CFG_KEY_V70, JSON.stringify(cfg||{})); cloudClientV70=null; }
 function cloudSupabaseReadyV70(){ return !!(window.supabase && typeof window.supabase.createClient==='function'); }
 function cloudClientGetV70(){
@@ -8786,14 +8727,6 @@ async function cloudSignInV70(){
   if(error){ toast('Bulut giriş hatası: '+error.message); return; }
   await cloudRefreshUserV70(); toast('Bulut oturumu açıldı.'); renderBackupCenterV56();
 }
-async function cloudForgotPasswordV70(){
-  const sb=cloudClientGetV70(); if(!sb) return;
-  const email=(document.getElementById('cloudEmailV70')?.value||'').trim();
-  if(!email){ toast('Şifre sıfırlama için e-posta adresini girin.'); return; }
-  const {error}=await sb.auth.resetPasswordForEmail(email);
-  if(error){ toast('Sıfırlama e-postası gönderilemedi: '+error.message); return; }
-  toast('Bulut hesabı için şifre sıfırlama e-postası gönderildi.');
-}
 async function cloudSignOutV70(){
   const sb=cloudClientGetV70(); if(!sb) return;
   await sb.auth.signOut(); cloudUserV70=null; toast('Bulut oturumu kapatıldı.'); renderBackupCenterV56();
@@ -8815,15 +8748,36 @@ async function cloudBackupNowV70(auto=false){
   const {error}=await sb.from('akademik_yedekler').insert(body);
   if(error){ if(!auto) toast('Bulut yedek hatası: '+error.message); console.warn(error); return; }
   localStorage.setItem(CLOUD_LAST_KEY_V70, new Date().toISOString());
+  cloudDirtyV73=false;
   if(!auto) toast('Bulut yedek alındı.');
   renderBackupCenterV56();
 }
+/* ============ SESSİZ, SÜREKLİ ARKA PLAN YEDEKLEMESİ v73 ============
+   Kullanıcıya hiçbir şey sorulmaz: değişiklik olduğunda kısa bir gecikmeyle,
+   ayrıca değişiklik olsun olmasın belirli aralıklarla (varsayılan 3 dk) güvence
+   yedeği alınır. Böylece hem sık kaydeden hem de uzun süre tek ekranda kalan
+   kullanıcı için veri kaybı riski en aza iner. */
+let cloudDirtyV73=false;
+async function cloudSafeAutoBackupV73(){
+  if(!cloudDirtyV73) return;      // değişiklik yoksa gereksiz yere buluta yazma
+  const cfg=cloudConfigV70(); if(!cfg.auto) return;
+  if(!cloudUserV70) return;       // oturum yoksa sessizce vazgeç, kullanıcıyı rahatsız etme
+  try{ await cloudBackupNowV70(true); }catch(e){ console.warn(e); }
+}
+function cloudEnsureAutoIntervalV73(){
+  const cfg=cloudConfigV70();
+  if(!cfg.auto){ clearInterval(cloudAutoIntervalV73); cloudAutoIntervalV73=null; return; }
+  if(cloudAutoIntervalV73) return; // zaten çalışıyor, tekrar kurma
+  const minutes=Math.max(1, +(cfg.interval||3));
+  cloudAutoIntervalV73=setInterval(cloudSafeAutoBackupV73, minutes*60*1000);
+}
 function cloudScheduleAutoBackupV70(){
+  cloudDirtyV73=true;
   const cfg=cloudConfigV70();
   if(!cfg.auto) return;
+  cloudEnsureAutoIntervalV73();
   clearTimeout(cloudAutoDebounceV70);
-  const minutes=Math.max(1, +(cfg.interval||2));
-  cloudAutoDebounceV70=setTimeout(()=>cloudBackupNowV70(true), minutes*60*1000);
+  cloudAutoDebounceV70=setTimeout(cloudSafeAutoBackupV73, 20*1000); // değişiklikten kısa süre sonra da yedekle
 }
 async function cloudListBackupsV70(){
   const box=document.getElementById('cloudBackupListV70'); if(!box) return;
@@ -8836,17 +8790,33 @@ async function cloudListBackupsV70(){
   if(!data?.length){ box.innerHTML='<div class="empty-note">Henüz bulut yedeği yok.</div>'; return; }
   box.innerHTML=data.map(r=>`<div class="cloud-backup-row-v70"><div><b>${esc(r.title||'Bulut yedeği')}</b><small>${new Date(r.created_at).toLocaleString('tr-TR')} · ${Math.round((r.size_bytes||0)/1024)} KB</small></div><button class="btn mini ghost" onclick="cloudRestoreBackupV70('${esc(r.id)}')">Geri Yükle</button></div>`).join('');
 }
-async function cloudRestoreBackupV70(id){
-  if(!confirm('Seçili bulut yedeği mevcut verilerin üzerine yüklensin mi?')) return;
-  const sb=cloudClientGetV70(); if(!sb) return;
+async function cloudFetchBackupPayloadV73(id){
+  const sb=cloudClientGetV70(); if(!sb) return null;
   const {data,error}=await sb.from('akademik_yedekler').select('payload').eq('id',id).single();
-  if(error||!data){ toast('Yedek alınamadı: '+(error?.message||'')); return; }
-  const d=data.payload;
+  if(error||!data) return null;
+  return data.payload;
+}
+function cloudApplyRestoredPayloadV73(d){
   const examBooklet=d.examBooklet||d.__examBooklet||null;
   delete d.examBooklet; delete d.__examBooklet;
   state=d; if(!state.settings) state.settings={hoursPerDay:8};
   save(); renderAll(); restoreExamBookletBackupV60(examBooklet);
+}
+async function cloudRestoreBackupV70(id){
+  if(!confirm('Seçili bulut yedeği mevcut verilerin üzerine yüklensin mi?')) return;
+  const d=await cloudFetchBackupPayloadV73(id);
+  if(!d){ toast('Yedek alınamadı.'); return; }
+  cloudApplyRestoredPayloadV73(d);
   toast('Bulut yedeği geri yüklendi.');
+}
+/* Otomatik/sessiz senkronizasyon: kullanıcıya sormadan, sadece bulut verisi
+   yerelden daha yeniyse geri yükler. Manuel geri yükleme (yukarıdaki fonksiyon)
+   her zaman onay ister; bu sessiz sürüm sadece açılışta otomatik senkronizasyon içindir. */
+async function cloudRestoreBackupSilentV73(id){
+  const d=await cloudFetchBackupPayloadV73(id);
+  if(!d) return false;
+  cloudApplyRestoredPayloadV73(d);
+  return true;
 }
 function cloudSqlV70(){
   return `create table if not exists public.akademik_yedekler (
@@ -9715,19 +9685,13 @@ function ensureTermStoreV56(){ let store=termStoreV56(); if(!store.terms) store.
 function activeTermV56(){ const store=ensureTermStoreV56(); return store.terms.find(t=>t.id===store.activeId)||store.terms[0]||null; }
 function saveCurrentTermWorkspaceV56(silent){ try{ let store=ensureTermStoreV56(); const id=store.activeId; const t=store.terms.find(x=>x.id===id); if(!t) return; t.payload=termPayloadCloneV56(); t.name=state.settings.term || t.name || defaultTermNameV56(); t.updatedAt=new Date().toISOString(); t.summary=termSummaryV56(state); writeTermStoreV56(store); if(!silent) toast('Aktif dönem çalışma alanı yedeklendi.'); }catch(e){ console.warn('Dönem yedeği yazılamadı',e); } }
 function blankTermStateV56(termName, institution){ return {teachers:[],departments:[],classes:[],rooms:[],lessons:[],settings:{hoursPerDay:8,term:termName,institution:institution||state.settings?.institution||'',preparedBy:state.settings?.preparedBy||'',approval:state.settings?.approval||'',avoidGaps:true,respectFreeDay:true,constraints:Object.assign({},DEFAULT_CONSTRAINTS)},examSchedules:examDefaultsV56(),scenarios:[],versions:[],printMode:'official'}; }
-function payloadForNewTermV56(termName,mode){ let payload; if(mode==='empty'){ payload=blankTermStateV56(termName); } else { payload=termPayloadCloneV56(); payload.settings=Object.assign({},payload.settings||{}, {term:termName}); if(mode==='structure'){ payload.lessons=(payload.lessons||[]).map(l=>Object.assign({},l,{slots:[]})); ['vize','final','but'].forEach(k=>{ if(payload.examSchedules&&payload.examSchedules[k]) payload.examSchedules[k].assignments={}; }); payload.scenarios=[]; payload.versions=[]; } if(mode==='people'){ payload.lessons=[]; ['vize','final','but'].forEach(k=>{ if(payload.examSchedules&&payload.examSchedules[k]) payload.examSchedules[k].assignments={}; }); payload.scenarios=[]; payload.versions=[]; } }
-  payload.settings.term=termName; return payload; }
 function applyTermPayloadV56(payload){ const base=blankTermStateV56(payload?.settings?.term||defaultTermNameV56()); state=Object.assign(base, cloneState(payload||{})); if(!state.examSchedules) state.examSchedules=examDefaultsV56(); ensureProfessionalDefaults(); save(); renderAll(); updateOfficialPrintBanner(); }
 function switchTermV56(id){ saveCurrentTermWorkspaceV56(true); let store=ensureTermStoreV56(); const target=store.terms.find(t=>t.id===id); if(!target){toast('Dönem bulunamadı.');return;} store.activeId=id; writeTermStoreV56(store); applyTermPayloadV56(target.payload||blankTermStateV56(target.name)); activateView('baslangic',{skipHistory:true}); toast(target.name+' dönemine geçildi.'); }
-function createTermV56(){ const year=document.getElementById('termYearV56')?.value.trim()||defaultAcademicYearV56(); const period=document.getElementById('termPeriodV56')?.value||'Güz'; const custom=document.getElementById('termCustomNameV56')?.value.trim(); const mode=document.querySelector('input[name="termCopyModeV56"]:checked')?.value||'structure'; const name=custom || `${year} ${period}`; saveCurrentTermWorkspaceV56(true); let store=ensureTermStoreV56(); const id=uid(); const payload=payloadForNewTermV56(name,mode); store.terms.unshift({id,name,academicYear:year,period,status:'active',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),summary:termSummaryV56(payload),payload}); store.activeId=id; writeTermStoreV56(store); applyTermPayloadV56(payload); closeAssignModal(); activateView('donem',{skipHistory:true}); renderTermCenterV56(); toast('Yeni dönem oluşturuldu: '+name); }
-function openCreateTermDialogV56(){ const year=defaultAcademicYearV56(); document.getElementById('assignModalTitle').textContent='Yeni Dönem Oluştur'; document.getElementById('assignModalBody').innerHTML=`<p style="color:var(--muted);font-size:13px;line-height:1.5">Dönemi en başta seçmek en sağlıklı akıştır. Böylece her güz/bahar döneminin verisi, sınavı, programı ve yedeği ayrı tutulur.</p><div class="term-modal-grid-v56"><label>Akademik yıl<input id="termYearV56" value="${esc(year)}"></label><label>Dönem<select id="termPeriodV56"><option>Güz</option><option>Bahar</option><option>Yaz</option><option>Vize Dönemi</option><option>Final Dönemi</option></select></label><label style="grid-column:1/-1">Özel dönem adı<input id="termCustomNameV56" placeholder="Boş bırakılırsa akademik yıl + dönem kullanılır"></label></div><div class="term-copy-options-v56"><label><input type="radio" name="termCopyModeV56" value="structure" checked><span><b>Önceki dönemden yapıyı kopyala</b><span>Bölüm, sınıf, öğretmen, derslik ve ders yükleri gelir; ders/sınav yerleşimleri temizlenir. Her dönem tekrar planlama için önerilir.</span></span></label><label><input type="radio" name="termCopyModeV56" value="people"><span><b>Sadece ana verileri kopyala</b><span>Bölüm, sınıf, öğretmen ve derslik gelir; ders yükleri ve program boş başlar.</span></span></label><label><input type="radio" name="termCopyModeV56" value="full"><span><b>Tam kopya oluştur</b><span>Mevcut dönem olduğu gibi çoğaltılır. Küçük değişiklik yapılacaksa kullanışlıdır.</span></span></label><label><input type="radio" name="termCopyModeV56" value="empty"><span><b>Boş dönem başlat</b><span>Tüm veri sıfırdan girilir.</span></span></label></div><div class="row" style="margin-top:14px"><button class="btn accent" onclick="createTermV56()">Dönemi Oluştur ve Geç</button><button class="btn ghost" onclick="closeAssignModal()">Vazgeç</button></div>`; document.getElementById('assignModalBg').classList.add('show'); }
 function deleteTermV56(id){ let store=ensureTermStoreV56(); if(store.terms.length<=1){toast('Son dönem silinemez.');return;} const t=store.terms.find(x=>x.id===id); if(!t) return; if(!confirm(t.name+' dönemini silmek istediğinize emin misiniz? Bu işlem dönem arşivinden kaldırır.')) return; const wasActive=store.activeId===id; store.terms=store.terms.filter(x=>x.id!==id); if(wasActive) store.activeId=store.terms[0].id; writeTermStoreV56(store); if(wasActive){ switchTermV56(store.activeId); } else { renderTermCenterV56(); renderBackupCenterV56(); } toast('Dönem silindi.'); }
 function duplicateTermV56(id){ saveCurrentTermWorkspaceV56(true); const store=ensureTermStoreV56(); const t=store.terms.find(x=>x.id===id); if(!t) return; const nid=uid(); const name=t.name+' - Kopya'; store.terms.unshift({id:nid,name,academicYear:t.academicYear,period:t.period,status:'draft',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),summary:termSummaryV56(t.payload),payload:cloneState(t.payload)}); writeTermStoreV56(store); renderTermCenterV56(); renderBackupCenterV56(); toast('Dönem kopyası oluşturuldu.'); }
 function exportTermV56(id){ saveCurrentTermWorkspaceV56(true); const store=ensureTermStoreV56(); const t=store.terms.find(x=>x.id===id); if(!t){toast('Dönem bulunamadı.');return;} const blob=new Blob([JSON.stringify(t,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(t.name||'donem').replace(/\s+/g,'_')+'_donem_yedegi.json'; a.click(); URL.revokeObjectURL(a.href); }
 function exportAllTermsV56(){ saveCurrentTermWorkspaceV56(true); const store=ensureTermStoreV56(); const blob=new Blob([JSON.stringify(store,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='tum_donemler_yedegi.json'; a.click(); URL.revokeObjectURL(a.href); }
 function renderCurrentTermBannerV56(){ const t=activeTermV56(); const name=t?.name || state.settings?.term || 'Dönem seçilmedi'; const sum=termSummaryV56(state); return `<div class="term-card-v56" style="margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap"><div><span class="current-term-pill-v56">Aktif dönem: ${esc(name)}</span><div style="font-size:12.5px;color:var(--muted);margin-top:8px">${sum.classes} sınıf · ${sum.teachers} öğretmen · ${sum.lessons} ders · ${sum.completion}% yerleşme</div></div><div class="row"><button class="btn ghost" onclick="activateView('donem')">Dönem Değiştir</button><button class="btn ghost" onclick="saveCurrentTermWorkspaceV56(); renderBackupCenterV56()">Dönemi Yedekle</button></div></div>`; }
-function renderTermListV56(){ const store=ensureTermStoreV56(); return `<div class="term-list-v56">${store.terms.map(t=>{ const s=t.summary||termSummaryV56(t.payload); const active=t.id===store.activeId; return `<div class="term-item-v56 ${active?'active':''}"><h3>${esc(t.name)}</h3><small>${esc(t.academicYear||'')} · ${esc(t.period||'')}<br>Son güncelleme: ${new Date(t.updatedAt||t.createdAt).toLocaleString('tr-TR')}</small><span class="term-badge-v56">${active?'Aktif dönem':'Arşiv'}</span><div class="term-kpi-v56" style="grid-template-columns:repeat(3,1fr)"><div><b>${s.classes||0}</b><span>Sınıf</span></div><div><b>${s.lessons||0}</b><span>Ders</span></div><div><b>${s.completion||0}%</b><span>Yerleşme</span></div></div><div class="term-actions-v56"><button class="btn ${active?'ghost':'accent'} mini" onclick="${active?'toast(\'Bu dönem zaten aktif.\')':'switchTermV56(\''+t.id+'\')'}">${active?'Aktif':'Bu Döneme Geç'}</button><button class="btn ghost mini" onclick="duplicateTermV56('${t.id}')">Kopyala</button><button class="btn ghost mini" onclick="exportTermV56('${t.id}')">Yedek Al</button><button class="btn danger mini" onclick="deleteTermV56('${t.id}')">Sil</button></div></div>`; }).join('')}</div>`; }
-function renderTermCenterV56(){ const wrap=document.getElementById('termCenterWrap'); if(!wrap) return; const t=activeTermV56(); const s=termSummaryV56(state); wrap.innerHTML=`<div class="term-hero-v56"><div class="term-card-v56 term-active-v56"><small>Aktif çalışma alanı</small><h2 style="margin:8px 0 6px">${esc(t?.name||state.settings.term||'Dönem seçilmedi')}</h2><p>Yeni dönem açıldığında önce hangi verilerin kopyalanacağı seçilir. En pratik akış: dönem başında yapıyı kopyala, ders/sınav yerleşimlerini temizle, sonra programı yeniden oluştur.</p><div class="term-kpi-v56"><div><b>${s.teachers}</b><span>Öğretmen</span></div><div><b>${s.classes}</b><span>Sınıf</span></div><div><b>${s.lessons}</b><span>Ders</span></div><div><b>${s.completion}%</b><span>Yerleşme</span></div></div><div class="term-actions-v56"><button class="btn accent" onclick="openCreateTermDialogV56()">Yeni Dönem Aç</button><button class="btn ghost" onclick="saveCurrentTermWorkspaceV56()">Aktif Dönemi Yedekle</button><button class="btn ghost" onclick="activateView('veri')">Veri Merkezine Geç</button></div></div><div class="term-card-v56"><h3 class="panel-title">Önerilen dönem akışı</h3><div class="term-flow-v56"><div><b>1. Dönemi seç</b><span>Güz, Bahar, Yaz veya özel dönem.</span></div><div><b>2. Yapıyı kopyala</b><span>Ana veriler taşınır, yerleşimler temizlenir.</span></div><div><b>3. Veriyi güncelle</b><span>Yeni ders/öğretmen değişiklikleri girilir.</span></div><div><b>4. Programı üret</b><span>Senaryo, analiz ve yedekle devam edilir.</span></div></div></div></div><div class="view-head"><h1 class="view-title" style="font-size:24px">Dönemler</h1><button class="btn ghost" onclick="exportAllTermsV56()">Tüm Dönemleri Yedekle</button></div>${renderTermListV56()}`; }
 function renderBackupCenterV56(){
   const wrap=document.getElementById('backupCenterWrap'); if(!wrap) return;
   const cfg=cloudConfigWithDefaultsV72();
@@ -10175,18 +10139,38 @@ async function cloudLatestBackupMetaV72(){
   return data[0];
 }
 async function cloudPromptLatestBackupOnLoginV72(){
-  const cfg=cloudConfigWithDefaultsV72();
-  if(!cfg.loadOnLogin) return;
+  // Manuel kullanım için: "Son Bulut Yedeğini Kontrol Et" düğmesi kullanıcı tarafından
+  // bilerek tıklandığında burada onay istemek doğrudur (istenmeyen bir açılış sorusu değildir).
   const latest=await cloudLatestBackupMetaV72();
-  if(!latest) return;
-  const key='akademik_last_prompted_cloud_backup_id_v72';
-  if(sessionStorage.getItem(key)===String(latest.id)) return;
-  sessionStorage.setItem(key,String(latest.id));
+  if(!latest){ toast('Bulutta kayıtlı yedek bulunamadı.'); return; }
   const when=new Date(latest.created_at).toLocaleString('tr-TR');
   const msg='Bulutta kayıtlı son yedek bulundu:\\n\\n'+(latest.title||'Bulut yedeği')+'\\n'+when+'\\n\\nBu yedeği şimdi yüklemek ister misiniz?';
   if(confirm(msg)){
     await cloudRestoreBackupV70(String(latest.id));
   }
+}
+/* Girişte OTOMATİK ve SESSİZ senkronizasyon: hiçbir soru sormaz.
+   Bulut ile yerel veriden hangisi daha yeniyse o kullanılır — böylece ne yeni bir
+   bilgisayarda yerel veri boşken bulut yedeği elde kalır, ne de bu cihazdaki
+   henüz buluta yansımamış en güncel değişiklikler yanlışlıkla eski bir yedekle
+   ezilir. */
+async function cloudSilentSyncOnLoginV73(){
+  const cfg=cloudConfigWithDefaultsV72();
+  if(!cfg.loadOnLogin) return;
+  try{
+    const latest=await cloudLatestBackupMetaV72();
+    if(!latest) return; // bulutta hiç yedek yok, yerel veriyle devam edilir
+    const key='akademik_last_synced_cloud_backup_id_v73';
+    if(sessionStorage.getItem(key)===String(latest.id)) return; // bu oturumda zaten kontrol edildi
+    sessionStorage.setItem(key,String(latest.id));
+    const cloudTime=new Date(latest.created_at).getTime();
+    const localTs=localStorage.getItem(STATE_UPDATED_AT_KEY_V73);
+    const localTime=localTs?new Date(localTs).getTime():0;
+    if(cloudTime>localTime){
+      const ok=await cloudRestoreBackupSilentV73(String(latest.id));
+      if(ok) toast('Bulut yedeğiyle senkronize edildi.');
+    }
+  }catch(e){ console.warn(e); }
 }
 async function cloudBackupBeforeLogoutV72(){
   const cfg=cloudConfigWithDefaultsV72();
@@ -10196,8 +10180,25 @@ async function cloudBackupBeforeLogoutV72(){
 async function cloudSyncAfterLoginV72(){
   try{
     cloudScheduleAutoBackupV70();
-    setTimeout(()=>cloudPromptLatestBackupOnLoginV72(),550);
+    cloudEnsureAutoIntervalV73();
+    setTimeout(()=>cloudSilentSyncOnLoginV73(),550);
   }catch(e){ console.warn(e); }
+}
+
+/* ============ SESSİZ KAPANIŞ GÜVENCESİ v73 ============
+   Kullanıcıya hiçbir şey sormaz. Sekme gizlendiğinde (uygulama küçültülür,
+   başka sekmeye geçilir, telefon kilitlenir) ve tarayıcı kapatılırken varsa
+   bekleyen değişiklikleri buluta yazmayı dener. Bu, periyodik güvence
+   yedeğiyle birlikte veri kaybı riskini pratikte ortadan kaldırır. */
+function cloudSetupLifecycleHooksV73(){
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='hidden'){ cloudSafeAutoBackupV73(); }
+  });
+  window.addEventListener('beforeunload', ()=>{
+    if(cloudDirtyV73 && cloudConfigV70().auto && cloudUserV70){
+      try{ cloudBackupNowV70(true); }catch(e){}
+    }
+  });
 }
 
 /* ============ GÜVENLİ BAŞLATMA: tüm v5.1 fonksiyonları tanımlandıktan sonra ============ */
@@ -10214,7 +10215,8 @@ function safeAppStartV51(){
     viewHistoryV5 = [];
     renderAll();
 secureGateInitV70();
-cloudRefreshUserV70().then(()=>cloudScheduleAutoBackupV70());
+cloudRefreshUserV70().then(()=>cloudEnsureAutoIntervalV73());
+cloudSetupLifecycleHooksV73();
     activateView(needsTermSelectionV56 ? 'donem' : 'baslangic', {skipHistory:true});
     renderNavTrail();
   }catch(err){
