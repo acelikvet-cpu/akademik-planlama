@@ -1651,49 +1651,9 @@ body.embedded-native.with-sidebar .screen,body.embedded-native.with-sidebar #wor
 &lt;/style&gt;
 &lt;/head&gt;
 &lt;body&gt;
-&lt;button id=&quot;globalLogoutBtn&quot; onclick=&quot;authLogout()&quot; title=&quot;Çıkış Yap&quot; style=&quot;display:none;position:fixed;bottom:16px;right:16px;z-index:1000;background:#8a2b2b;color:#fff;border:0;border-radius:9px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);font-family:system-ui,-apple-system,&#x27;Segoe UI&#x27;,Arial,sans-serif&quot;&gt;🚪 Çıkış Yap&lt;/button&gt;
-&lt;button id=&quot;globalRefreshBtn&quot; onclick=&quot;forceUpdateCheck()&quot; title=&quot;Güncellemeleri kontrol et (önbelleği atla)&quot; style=&quot;display:none;position:fixed;bottom:16px;right:130px;z-index:1000;background:#16314e;color:#fff;border:0;border-radius:9px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);font-family:system-ui,-apple-system,&#x27;Segoe UI&#x27;,Arial,sans-serif&quot;&gt;🔄 Güncelle&lt;/button&gt;
-
 &lt;div id=&quot;errBar&quot; class=&quot;err-bar&quot; style=&quot;display:none&quot;&gt;
   &lt;span id=&quot;errBarMsg&quot;&gt;&lt;/span&gt;
   &lt;button class=&quot;err-close&quot; aria-label=&quot;Uyarıyı kapat&quot; onclick=&quot;document.getElementById(&#x27;errBar&#x27;).style.display=&#x27;none&#x27;&quot;&gt;✕&lt;/button&gt;
-&lt;/div&gt;
-
-&lt;!-- ===== SUPABASE GİRİŞ EKRANI ===== --&gt;
-&lt;div id=&quot;authScreen&quot; style=&quot;display:none;position:fixed;inset:0;z-index:999;background:#16314e;align-items:center;justify-content:center&quot;&gt;
-  &lt;div style=&quot;background:#fffdf8;border-radius:20px;padding:36px 32px;width:min(360px,92vw);display:flex;flex-direction:column;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,.4)&quot;&gt;
-    &lt;div style=&quot;text-align:center&quot;&gt;
-      &lt;div style=&quot;font-size:22px;font-weight:800;color:#16314e&quot;&gt;Sınav Kitapçığı&lt;/div&gt;
-      &lt;div style=&quot;font-size:13px;color:#7a7264;margin-top:4px&quot;&gt;Hesabınıza giriş yapın&lt;/div&gt;
-    &lt;/div&gt;
-    &lt;div id=&quot;authMsg&quot; style=&quot;display:none;padding:10px 14px;border-radius:10px;font-size:13px;text-align:center&quot;&gt;&lt;/div&gt;
-    &lt;input id=&quot;authEmail&quot; type=&quot;email&quot; placeholder=&quot;E-posta adresi&quot; style=&quot;border:1px solid #e3dcc9;border-radius:10px;padding:12px 14px;font-size:14px;outline:none&quot;&gt;
-    &lt;input id=&quot;authPass&quot; type=&quot;password&quot; placeholder=&quot;Şifre&quot; style=&quot;border:1px solid #e3dcc9;border-radius:10px;padding:12px 14px;font-size:14px;outline:none&quot;&gt;
-    &lt;button onclick=&quot;authLogin()&quot; style=&quot;background:#16314e;color:#fff;border:0;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer&quot;&gt;Giriş Yap&lt;/button&gt;
-    &lt;div style=&quot;display:flex;gap:8px&quot;&gt;
-      &lt;button onclick=&quot;authRegister()&quot; style=&quot;flex:1;background:#f6f2ea;color:#16314e;border:1px solid #e3dcc9;border-radius:10px;padding:10px;font-size:13px;cursor:pointer&quot;&gt;Kayıt Ol&lt;/button&gt;
-      &lt;button onclick=&quot;authReset()&quot; style=&quot;flex:1;background:#f6f2ea;color:#7a7264;border:1px solid #e3dcc9;border-radius:10px;padding:10px;font-size:13px;cursor:pointer&quot;&gt;Şifremi Unuttum&lt;/button&gt;
-    &lt;/div&gt;
-    &lt;div id=&quot;authConfig&quot; style=&quot;border-top:1px solid #e3dcc9;padding-top:14px;display:flex;flex-direction:column;gap:8px&quot;&gt;
-      &lt;div style=&quot;font-size:11.5px;color:#9a8f7a;text-align:center&quot;&gt;İlk kurulum — Supabase bilgilerini gir&lt;/div&gt;
-      &lt;input id=&quot;cfgUrl&quot; placeholder=&quot;https://xxxx.supabase.co&quot; style=&quot;border:1px solid #e3dcc9;border-radius:8px;padding:9px 12px;font-size:12px;outline:none&quot;&gt;
-      &lt;input id=&quot;cfgKey&quot; placeholder=&quot;eyJhbG... (anon public key)&quot; style=&quot;border:1px solid #e3dcc9;border-radius:8px;padding:9px 12px;font-size:12px;outline:none&quot;&gt;
-      &lt;button onclick=&quot;authSaveConfig()&quot; style=&quot;background:#8a2b2b;color:#fff;border:0;border-radius:8px;padding:9px;font-size:13px;cursor:pointer&quot;&gt;Kaydet ve Bağlan&lt;/button&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/div&gt;
-
-&lt;div id=&quot;recoveryScreen&quot; style=&quot;display:none;position:fixed;inset:0;z-index:1001;background:#16314e;align-items:center;justify-content:center&quot;&gt;
-  &lt;div style=&quot;background:#fffdf8;border-radius:20px;padding:36px 32px;width:min(360px,92vw);display:flex;flex-direction:column;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,.4)&quot;&gt;
-    &lt;div style=&quot;text-align:center&quot;&gt;
-      &lt;div style=&quot;font-size:22px;font-weight:800;color:#16314e&quot;&gt;Yeni Şifre Belirle&lt;/div&gt;
-      &lt;div style=&quot;font-size:13px;color:#7a7264;margin-top:4px&quot;&gt;Hesabınız için yeni bir şifre girin&lt;/div&gt;
-    &lt;/div&gt;
-    &lt;div id=&quot;recoveryMsg&quot; style=&quot;display:none;padding:10px 14px;border-radius:10px;font-size:13px;text-align:center&quot;&gt;&lt;/div&gt;
-    &lt;input id=&quot;recoveryPass1&quot; type=&quot;password&quot; placeholder=&quot;Yeni şifre (en az 6 karakter)&quot; style=&quot;border:1px solid #e3dcc9;border-radius:10px;padding:12px 14px;font-size:14px;outline:none&quot;&gt;
-    &lt;input id=&quot;recoveryPass2&quot; type=&quot;password&quot; placeholder=&quot;Yeni şifre (tekrar)&quot; style=&quot;border:1px solid #e3dcc9;border-radius:10px;padding:12px 14px;font-size:14px;outline:none&quot;&gt;
-    &lt;button onclick=&quot;authCompleteRecovery()&quot; style=&quot;background:#16314e;color:#fff;border:0;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer&quot;&gt;Şifreyi Kaydet&lt;/button&gt;
-  &lt;/div&gt;
 &lt;/div&gt;
 
 &lt;aside id=&quot;sideBar&quot; aria-label=&quot;Dönem ve ders gezinmesi&quot;&gt;&lt;/aside&gt;
@@ -5075,267 +5035,21 @@ function safeImg(src){
 }
 
 /* ===================== PROJE KATMANI: Dönemler / Dersler / Sınavlar ===================== */
-/* ========================================================
-   SUPABASE KATMANI
-   - İlk açılışta authScreen gösterilir
-   - Giriş sonrası veriler Supabase&#x27;den çekilir
-   - Her kayıtta hem IndexedDB (çevrimdışı) hem Supabase&#x27;e yazılır
-   - Bağlantı yoksa IDB&#x27;den çalışır, fırsatta senkronize edilir
-   ======================================================== */
-let _sb = null;          // Supabase client
-let _userId = null;      // oturum açmış kullanıcının id&#x27;si
-let _syncQueue = [];     // çevrimdışıyken bekleyen kayıtlar
-
-function sbUrl(){ return localStorage.getItem(&#x27;sb_url&#x27;)||&#x27;&#x27;; }
-function sbKey(){ return localStorage.getItem(&#x27;sb_key&#x27;)||&#x27;&#x27;; }
-
-function initSupabase(){
-  const url=sbUrl(), key=sbKey();
-  if(!url||!key) return false;
-  try{
-    _sb = supabase.createClient(url, key);
-    // Supabase&#x27;in resmi &quot;şifre sıfırlama&quot; olayı — hash tabanlı algılama kaçırırsa bu yakalar
-    _sb.auth.onAuthStateChange((event, session)=&gt;{
-      if(event===&#x27;PASSWORD_RECOVERY&#x27; &amp;&amp; session){
-        _userId=session.user.id;
-        document.getElementById(&#x27;authScreen&#x27;).style.display=&#x27;none&#x27;;
-        document.getElementById(&#x27;recoveryScreen&#x27;).style.display=&#x27;flex&#x27;;
-      }
-    });
-    return true;
-  }catch(e){ console.warn(&#x27;Supabase init hatası:&#x27;, e); return false; }
-}
-
-function authSaveConfig(){
-  const url=(document.getElementById(&#x27;cfgUrl&#x27;).value||&#x27;&#x27;).trim();
-  const key=(document.getElementById(&#x27;cfgKey&#x27;).value||&#x27;&#x27;).trim();
-  if(!url||!key){ setAuthMsg(&#x27;URL ve anahtar gerekli.&#x27;,&#x27;err&#x27;); return; }
-  localStorage.setItem(&#x27;sb_url&#x27;, url);
-  localStorage.setItem(&#x27;sb_key&#x27;, key);
-  if(initSupabase()){ setAuthMsg(&#x27;Bağlantı kuruldu! Şimdi giriş yapabilirsin.&#x27;,&#x27;ok&#x27;); document.getElementById(&#x27;authConfig&#x27;).style.display=&#x27;none&#x27;; }
-  else setAuthMsg(&#x27;Bağlantı kurulamadı, bilgileri kontrol et.&#x27;,&#x27;err&#x27;);
-}
-
-function setAuthMsg(msg, type){
-  const el=document.getElementById(&#x27;authMsg&#x27;); if(!el) return;
-  el.style.display=&#x27;&#x27;; el.textContent=msg;
-  el.style.background = type===&#x27;ok&#x27;?&#x27;#e8f3ec&#x27;:type===&#x27;err&#x27;?&#x27;#fdf0f0&#x27;:&#x27;#f6f2ea&#x27;;
-  el.style.color = type===&#x27;ok&#x27;?&#x27;#1d4d2e&#x27;:type===&#x27;err&#x27;?&#x27;#8a2b2b&#x27;:&#x27;#16314e&#x27;;
-}
-
-async function authLogin(){
-  if(!_sb){ setAuthMsg(&#x27;Önce Supabase bilgilerini gir.&#x27;,&#x27;err&#x27;); return; }
-  const email=document.getElementById(&#x27;authEmail&#x27;).value.trim();
-  const pass=document.getElementById(&#x27;authPass&#x27;).value;
-  if(!email||!pass){ setAuthMsg(&#x27;E-posta ve şifre gerekli.&#x27;,&#x27;err&#x27;); return; }
-  setAuthMsg(&#x27;Giriş yapılıyor…&#x27;,&#x27;info&#x27;);
-  const {data,error}=await _sb.auth.signInWithPassword({email,password:pass});
-  if(error){
-    if(error.message.includes(&#x27;Email not confirmed&#x27;))
-      setAuthMsg(&#x27;E-posta adresin henüz doğrulanmamış. Gelen kutunu kontrol et ve doğrulama linkine tıkla.&#x27;,&#x27;err&#x27;);
-    else if(error.message.includes(&#x27;Invalid login&#x27;))
-      setAuthMsg(&#x27;E-posta veya şifre hatalı.&#x27;,&#x27;err&#x27;);
-    else
-      setAuthMsg(&#x27;Giriş hatası: &#x27;+error.message,&#x27;err&#x27;);
-    return;
-  }
-  _userId=data.user.id;
-  document.getElementById(&#x27;authScreen&#x27;).style.display=&#x27;none&#x27;;
-  await bootAfterAuth();
-}
-
-async function authRegister(){
-  if(!_sb){ setAuthMsg(&#x27;Önce Supabase bilgilerini gir.&#x27;,&#x27;err&#x27;); return; }
-  const email=document.getElementById(&#x27;authEmail&#x27;).value.trim();
-  const pass=document.getElementById(&#x27;authPass&#x27;).value;
-  if(!email||!pass){ setAuthMsg(&#x27;E-posta ve şifre gerekli.&#x27;,&#x27;err&#x27;); return; }
-  if(pass.length&lt;6){ setAuthMsg(&#x27;Şifre en az 6 karakter olmalı.&#x27;,&#x27;err&#x27;); return; }
-  setAuthMsg(&#x27;Kayıt oluşturuluyor…&#x27;,&#x27;info&#x27;);
-  const {data,error}=await _sb.auth.signUp({email,password:pass});
-  if(error){ setAuthMsg(&#x27;Kayıt hatası: &#x27;+error.message,&#x27;err&#x27;); return; }
-  // E-posta doğrulama aktifse identities boş gelir
-  const needsConfirm=!data.user?.identities?.length || data.user.identities.length===0 || !data.session;
-  if(needsConfirm){
-    setAuthMsg(&#x27;✉️ Doğrulama e-postası gönderildi! Gelen kutunu kontrol et ve linke tıkla. Onayladıktan sonra buradan giriş yapabilirsin.&#x27;,&#x27;ok&#x27;);
-  } else {
-    setAuthMsg(&#x27;Kayıt başarılı! Giriş yapılıyor…&#x27;,&#x27;ok&#x27;);
-    setTimeout(async()=&gt;{
-      _userId=data.user.id;
-      document.getElementById(&#x27;authScreen&#x27;).style.display=&#x27;none&#x27;;
-      await bootAfterAuth();
-    },800);
-  }
-}
-
-async function authReset(){
-  if(!_sb){ setAuthMsg(&#x27;Önce Supabase bilgilerini gir.&#x27;,&#x27;err&#x27;); return; }
-  const email=document.getElementById(&#x27;authEmail&#x27;).value.trim();
-  if(!email){ setAuthMsg(&#x27;E-posta adresini gir.&#x27;,&#x27;err&#x27;); return; }
-  setAuthMsg(&#x27;Gönderiliyor…&#x27;,&#x27;info&#x27;);
-  const {error}=await _sb.auth.resetPasswordForEmail(email, { redirectTo: &#x27;https://acelikvet-cpu.github.io/sinav/&#x27; });
-  if(error){ setAuthMsg(&#x27;Hata: &#x27;+error.message,&#x27;err&#x27;); return; }
-  setAuthMsg(&#x27;✉️ Şifre sıfırlama bağlantısı e-postana gönderildi.&#x27;,&#x27;ok&#x27;);
-}
-
-async function authLogout(){
-  try{
-    if(_sb) await _sb.auth.signOut();
-  }catch(e){ console.warn(&#x27;Çıkış hatası:&#x27;, e); }
-  // Supabase oturum bilgisini tarayıcıdan tamamen temizle (yarış durumunu önler)
-  try{
-    Object.keys(localStorage).forEach(k=&gt;{ if(k.startsWith(&#x27;sb-&#x27;)||k.includes(&#x27;supabase.auth&#x27;)) localStorage.removeItem(k); });
-  }catch(e){ console.warn(e); }
-  _userId=null; _sb=null;
-  // Adresteki olası eski token/hash bilgisini temizle (yoksa sayfa yeniden
-  // yüklenince aynı token okunup kullanıcı tekrar otomatik içeri alınabilir)
-  location.replace(location.origin + location.pathname);
-}
-
-/* --- Supabase veri fonksiyonları --- */
-async function sbLoadAll(){
-  if(!_sb||!_userId) return null;
-  try{
-    const [{data:td},{data:cd},{data:trd}]=await Promise.all([
-      _sb.from(&#x27;terms&#x27;).select(&#x27;*&#x27;).eq(&#x27;user_id&#x27;,_userId).order(&#x27;created_at&#x27;),
-      _sb.from(&#x27;courses&#x27;).select(&#x27;*&#x27;).eq(&#x27;user_id&#x27;,_userId),
-      _sb.from(&#x27;trash&#x27;).select(&#x27;*&#x27;).eq(&#x27;user_id&#x27;,_userId).single()
-    ]);
-    terms=(td||[]).map(r=&gt;({id:r.id, name:r.name}));
-    courses=(cd||[]).map(r=&gt;({...r.data, id:r.id, name:r.name, termId:r.term_id}));
-    trash=(trd&amp;&amp;trd.data)||[];
-    return true;
-  }catch(e){ console.warn(&#x27;Supabase yükleme hatası:&#x27;,e); return null; }
-}
-
-async function sbPutCourse(c){
-  if(!_sb||!_userId){ _syncQueue.push({type:&#x27;course&#x27;,data:c}); return; }
-  try{
-    await _sb.from(&#x27;courses&#x27;).upsert({
-      id:c.id, user_id:_userId, term_id:c.termId, name:c.name,
-      data:{...c, id:undefined, name:undefined, termId:undefined}
-    });
-  }catch(e){ console.warn(&#x27;Supabase kayıt hatası:&#x27;,e); _syncQueue.push({type:&#x27;course&#x27;,data:c}); }
-}
-
-async function sbDelCourse(id){
-  if(!_sb||!_userId) return;
-  try{ await _sb.from(&#x27;courses&#x27;).delete().eq(&#x27;id&#x27;,id).eq(&#x27;user_id&#x27;,_userId); }catch(e){console.warn(e);}
-}
-
-async function sbDelTerm(id){
-  if(!_sb||!_userId) return;
-  try{ await _sb.from(&#x27;terms&#x27;).delete().eq(&#x27;id&#x27;,id).eq(&#x27;user_id&#x27;,_userId); }catch(e){console.warn(e);}
-}
-
-async function sbSaveTerms(){
-  if(!_sb||!_userId) return;
-  try{
-    // mevcut terimleri upsert et
-    if(terms.length) await _sb.from(&#x27;terms&#x27;).upsert(terms.map(t=&gt;({id:t.id,user_id:_userId,name:t.name})));
-  }catch(e){console.warn(e);}
-}
-
-async function sbSaveTrash(){
-  if(!_sb||!_userId) return;
-  try{
-    await _sb.from(&#x27;trash&#x27;).upsert({id:_userId, user_id:_userId, data:trash});
-  }catch(e){console.warn(e);}
-}
-
-async function flushSyncQueue(){
-  if(!_sb||!_userId||!_syncQueue.length) return;
-  const q=[..._syncQueue]; _syncQueue=[];
-  for(const item of q){
-    if(item.type===&#x27;course&#x27;) await sbPutCourse(item.data);
-  }
-}
-
-/* --- idbPut + idbDel Supabase&#x27;e de yazsın --- */
-const _origIdbPut = window._origIdbPut || function(o){
+function idbPut(o){
   if(_useLS){ lsSave(); return Promise.resolve(); }
   return new Promise((res,rej)=&gt;{ const t=_db.transaction(DB_STORE,&#x27;readwrite&#x27;).objectStore(DB_STORE).put(o); t.onsuccess=()=&gt;res(); t.onerror=()=&gt;rej(t.error); });
-};
-const _origIdbAll = window._origIdbAll || function(){
-  if(_useLS) return Promise.resolve(lsAll());
-  return new Promise((res,rej)=&gt;{ const t=_db.transaction(DB_STORE,&#x27;readonly&#x27;).objectStore(DB_STORE).getAll(); t.onsuccess=()=&gt;res(t.result||[]); t.onerror=()=&gt;rej(t.error); });
-};
-const _origIdbDel = function(id){
+}
+function idbDel(id){
   if(_useLS){ lsSave(); return Promise.resolve(); }
   return new Promise((res,rej)=&gt;{ const t=_db.transaction(DB_STORE,&#x27;readwrite&#x27;).objectStore(DB_STORE).delete(id); t.onsuccess=()=&gt;res(); t.onerror=()=&gt;rej(t.error); });
-};
-function idbPut(o){ if(!_sb||!_userId) return _origIdbPut(o); sbPutCourse(o); return _origIdbPut(o); }
-function idbDel(id){ sbDelCourse(id); return _origIdbDel(id); }
-
-const _origSaveTerms = function(){
+}
+function saveTerms(){
   if(_useLS){ lsSaveTerms(); return; }
   try{ _db.transaction(META_STORE,&#x27;readwrite&#x27;).objectStore(META_STORE).put({id:&#x27;terms&#x27;,list:terms}); }catch(e){console.warn(e)}
-};
-const _origSaveTrash = function(){
+}
+function saveTrash(){
   if(_useLS){ try{ localStorage.setItem(&#x27;trashAll&#x27;, JSON.stringify(trash)); }catch(e){console.warn(e)} return; }
   try{ _db.transaction(META_STORE,&#x27;readwrite&#x27;).objectStore(META_STORE).put({id:&#x27;trash&#x27;, list:trash}); }catch(e){console.warn(e)}
-};
-function saveTerms(){ sbSaveTerms(); _origSaveTerms(); }
-function saveTrash(){ sbSaveTrash(); _origSaveTrash(); }
-
-/* ======= Supabase boot = auth kontrolü + boot ======= */
-async function bootAfterAuth(){
-  // önce Supabase&#x27;den yükle
-  const sbOk = await sbLoadAll();
-  if(sbOk){
-    // Supabase başarılı — IDB&#x27;yi de güncelle (çevrimdışı destek)
-    for(const c of courses){ try{ await _origIdbPut(c); }catch(e){console.warn(e);} }
-  }
-  if(!sbOk){
-    // Çevrimdışı — IDB&#x27;den yükle
-    try{ courses=await _origIdbAll(); }catch(e){ _useLS=true; courses=lsAll(); }
-    if(_useLS){ terms=lsTerms(); }
-    else { try{ const t=await idbGetMeta(&#x27;terms&#x27;); terms=(t&amp;&amp;Array.isArray(t.list))?t.list:[]; }catch(e){ terms=[]; } }
-  }
-  if(!Array.isArray(terms)) terms=[];
-  if(!terms.length){ terms.push({id:uid(), name:defaultTermName()}); saveTerms(); }
-  await recoverEmergencySnapshot();
-  courses.forEach(c=&gt;{ if(!c.termId){ c.termId=terms[0].id; _origIdbPut(c); } }); // sadece yerel onarım — sunucuya geri yazmaz (silinen kayıtların dirilmesini önler)
-  if(!courses.length){
-    const c=makeCourse(DEFAULT.settings.ders||&#x27;Yeni Ders&#x27;); c.termId=terms[0].id;
-    c.bank=JSON.parse(JSON.stringify(DEFAULT.questions||[]));
-    courses.push(c); try{ await idbPut(c); }catch(_){console.warn(_)}
-  }
-  await loadTrash();
-  await loadBackupDir();
-  setupAutosave();
-  // çevrimdışıyken biriken kayıtları gönder
-  setTimeout(flushSyncQueue, 3000);
-  // Supabase realtime: başka cihazdan değişiklik gelirse bildir
-  if(_sb&amp;&amp;_userId){
-    const glb=document.getElementById(&#x27;globalLogoutBtn&#x27;); if(glb) glb.style.display=&#x27;block&#x27;;
-    const grb=document.getElementById(&#x27;globalRefreshBtn&#x27;); if(grb) grb.style.display=&#x27;block&#x27;;
-    _sb.channel(&#x27;courses&#x27;).on(&#x27;postgres_changes&#x27;,
-      {event:&#x27;*&#x27;, schema:&#x27;public&#x27;, table:&#x27;courses&#x27;, filter:&#x27;user_id=eq.&#x27;+_userId},
-      async ()=&gt;{
-        // Başka cihazdan gelen değişiklikleri otomatik al — eski/silinmiş verinin
-        // bu cihazda &quot;diriltilmesini&quot; önlemek için hemen sunucudan tazele.
-        setSaveStatus(&#x27;sync&#x27;,&#x27;Başka cihazdan değişiklik alınıyor…&#x27;);
-        const ok = await sbLoadAll();
-        if(ok){
-          for(const c of courses){ try{ await _origIdbPut(c); }catch(e){console.warn(e);} }
-          if(curCourseId &amp;&amp; !courses.find(c=&gt;c.id===curCourseId)){ curCourseId=null; curExamId=null; }
-          if(document.getElementById(&#x27;screen-home&#x27;)) renderCourseList();
-          if(document.getElementById(&#x27;screen-course&#x27;)) renderExamList();
-          renderSidebar();
-          setSaveStatus(&#x27;ok&#x27;,&#x27;Güncellendi ✓&#x27;);
-        }
-      }
-    ).subscribe();
-    // panel&#x27;e çıkış butonu ekle
-    const foot=document.querySelector(&#x27;.sb-foot&#x27;);
-    if(foot){
-      const btn=document.createElement(&#x27;button&#x27;);
-      btn.className=&#x27;sb-link&#x27;; btn.textContent=&#x27;🚪 Çıkış Yap&#x27;;
-      btn.onclick=authLogout; foot.appendChild(btn);
-    }
-  }
-  syncMainCoursesFromParent(true);
-  showHome();
 }
 
 const DB_NAME=&#x27;sinavApp&#x27;, DB_STORE=&#x27;courses&#x27;, META_STORE=&#x27;meta&#x27;;
@@ -5369,7 +5083,7 @@ function normalizeBookletWorkspace(){
   terms=[{id:id,name:BOOKLET_TERM_NAME}];
   curTermId=id;
   let changed=true;
-  (courses||[]).forEach(c=&gt;{ if(c.termId!==id){ c.termId=id; try{ _origIdbPut(c); }catch(e){ console.warn(e); } } });
+  (courses||[]).forEach(c=&gt;{ if(c.termId!==id){ c.termId=id; try{ idbPut(c); }catch(e){ console.warn(e); } } });
   if(changed) saveTerms();
   return id;
 }
@@ -5427,7 +5141,7 @@ window.importExamBookletData=async function(data){
   courses=Array.isArray(data.courses)?data.courses.map(sanitizeCourse).filter(Boolean):[];
   trash=Array.isArray(data.trash)?data.trash:[];
   normalizeBookletWorkspace();
-  try{ for(const c of old){ if(!courses.some(n=&gt;n.id===c.id)) await _origIdbDel(c.id); } }catch(e){ console.warn(e); }
+  try{ for(const c of old){ if(!courses.some(n=&gt;n.id===c.id)) await idbDel(c.id); } }catch(e){ console.warn(e); }
   saveTerms(); saveTrash();
   for(const c of courses){ try{ await idbPut(c); }catch(e){ console.warn(e); } }
   syncMainCoursesFromParent(true);
@@ -5436,27 +5150,12 @@ window.importExamBookletData=async function(data){
 };
 function defaultTermName(){ const d=new Date(); return d.getFullYear()+&#x27; &#x27;+(d.getMonth()&lt;6?&#x27;Bahar&#x27;:&#x27;Güz&#x27;); }
 
-async function forceUpdateCheck(){
-  const btn=document.getElementById(&#x27;globalRefreshBtn&#x27;);
-  if(btn){ btn.disabled=true; btn.textContent=&#x27;🔄 Kontrol ediliyor…&#x27;; }
-  try{
-    if(_dirty){ writeEmergencySnapshot(); await saveNow(); }
-    if(window.caches &amp;&amp; caches.keys){
-      const keys=await caches.keys();
-      await Promise.all(keys.map(k=&gt;caches.delete(k)));
-    }
-  }catch(e){ console.warn(e); }
-  // önbelleği atlamak için adrese benzersiz bir parametre ekleyip yeniden yükle
-  const url=new URL(location.href);
-  url.searchParams.set(&#x27;_v&#x27;, Date.now());
-  location.replace(url.toString());
-}
 async function boot(){
   try{ _db=await idbOpen(); }catch(e){ _db=null; }
   if(!_db) _useLS=true;
 
   try{
-    courses = await _origIdbAll();
+    courses = await idbAll();
   }catch(e){
     _useLS = true;
     courses = lsAll();
@@ -5479,7 +5178,7 @@ async function boot(){
 
   await recoverEmergencySnapshot();
   courses.forEach(c=&gt;{
-    if(!c.termId){ c.termId=terms[0].id; _origIdbPut(c); }
+    if(!c.termId){ c.termId=terms[0].id; idbPut(c); }
   });
 
   if(!courses.length){
@@ -5487,39 +5186,16 @@ async function boot(){
     c.termId=terms[0].id;
     c.bank=JSON.parse(JSON.stringify(DEFAULT.questions||[]));
     courses.push(c);
-    try{ await _origIdbPut(c); }catch(e){ console.warn(e); }
+    try{ await idbPut(c); }catch(e){ console.warn(e); }
   }
 
   await loadTrash();
   await loadBackupDir();
   setupAutosave();
 
-  const auth=document.getElementById(&#x27;authScreen&#x27;); if(auth) auth.style.display=&#x27;none&#x27;;
-  const recovery=document.getElementById(&#x27;recoveryScreen&#x27;); if(recovery) recovery.style.display=&#x27;none&#x27;;
-  const glb=document.getElementById(&#x27;globalLogoutBtn&#x27;); if(glb) glb.style.display=&#x27;none&#x27;;
-  const grb=document.getElementById(&#x27;globalRefreshBtn&#x27;); if(grb) grb.style.display=&#x27;none&#x27;;
 
   syncMainCoursesFromParent(true);
   showHome();
-}
-async function authCompleteRecovery(){
-  const p1=document.getElementById(&#x27;recoveryPass1&#x27;).value;
-  const p2=document.getElementById(&#x27;recoveryPass2&#x27;).value;
-  const msg=document.getElementById(&#x27;recoveryMsg&#x27;);
-  const showMsg=(text,ok)=&gt;{ msg.style.display=&#x27;block&#x27;; msg.textContent=text; msg.style.background=ok?&#x27;#e6f4ea&#x27;:&#x27;#fbe9e9&#x27;; msg.style.color=ok?&#x27;#1e7a3e&#x27;:&#x27;#a13a3a&#x27;; };
-  if(!p1||p1.length&lt;6){ showMsg(&#x27;Şifre en az 6 karakter olmalı.&#x27;,false); return; }
-  if(p1!==p2){ showMsg(&#x27;Şifreler birbiriyle uyuşmuyor.&#x27;,false); return; }
-  try{
-    const {error}=await _sb.auth.updateUser({password:p1});
-    if(error){ showMsg(&#x27;Hata: &#x27;+error.message,false); return; }
-    showMsg(&#x27;Şifreniz güncellendi, uygulamaya giriliyor…&#x27;,true);
-    // recovery işaretini adres çubuğundan temizle ki tekrar sıfırlama ekranı çıkmasın
-    history.replaceState(null,&#x27;&#x27;,location.pathname);
-    setTimeout(async ()=&gt;{
-      document.getElementById(&#x27;recoveryScreen&#x27;).style.display=&#x27;none&#x27;;
-      await bootAfterAuth();
-    },900);
-  }catch(e){ showMsg(&#x27;Hata: &#x27;+(e.message||e),false); }
 }
 /* ======= sol kenar çubuğu ======= */
 function renderSidebar(){
@@ -5569,7 +5245,7 @@ function delTerm(id){
     trashAdd(&#x27;term&#x27;, (term&amp;&amp;term.name)||&#x27;Dönem&#x27;, {term, courses:cs});
     cs.forEach(c=&gt;idbDel(c.id));
     courses=courses.filter(c=&gt;c.termId!==id);
-    terms=terms.filter(t=&gt;t.id!==id); saveTerms(); sbDelTerm(id); renderTermList();
+    terms=terms.filter(t=&gt;t.id!==id); saveTerms(); renderTermList();
   }, &#x27;Evet, dönemi sil&#x27;);
 }
 function openTerm(id){ normalizeBookletWorkspace(); curCourseId=null; curExamId=null; showHome(); }
@@ -8695,7 +8371,10 @@ async function cloudSignInV70(){
 }
 async function cloudSignOutV70(){
   const sb=cloudClientGetV70(); if(!sb) return;
-  await sb.auth.signOut(); cloudUserV70=null; toast('Bulut oturumu kapatıldı.'); renderBackupCenterV56();
+  try{ await cloudBackupBeforeLogoutV72(); }catch(e){ console.warn(e); }
+  await sb.auth.signOut(); cloudUserV70=null;
+  clearInterval(cloudAutoIntervalV73); cloudAutoIntervalV73=null;
+  toast('Bulut oturumu kapatıldı.'); renderBackupCenterV56();
 }
 function cloudSnapshotV70(){
   saveCurrentTermWorkspaceV56(true);
@@ -10070,6 +9749,7 @@ async function secureLogoutV70(){
     if(sb) await sb.auth.signOut();
   }catch(e){ console.warn(e); }
   cloudUserV70=null;
+  clearInterval(cloudAutoIntervalV73); cloudAutoIntervalV73=null;
   secureShowOverlayV70('login');
   try{ renderBackupCenterV56(); }catch(e){}
 }
